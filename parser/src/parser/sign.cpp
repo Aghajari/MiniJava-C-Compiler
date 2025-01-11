@@ -193,7 +193,6 @@ void parseMethodParams(
         } while (token != nullptr && token->lexeme == ",");
     }
 
-
     if (token == nullptr || token->lexeme != ")") {
         error("Failed to parse method, expected , or )", token);
     }

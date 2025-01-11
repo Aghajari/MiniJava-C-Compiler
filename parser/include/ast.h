@@ -759,31 +759,43 @@ struct IfStatement : public ASTNode {
 
 /**
  * @struct WhileStatement
- * @brief Represents a `while` loop in Mini-Java.
+ * @brief Represents a `while` or 'do-while' loop in Mini-Java.
  *
- * The `WhileStatement` node models iterative behavior in Mini-Java, allowing a block of code
- * to repeatedly execute as long as a given condition evaluates to `true`.
+ * The `WhileStatement` node models iterative behavior in Mini-Java, supporting both:
+ * 1. While loops: Condition checked before execution
+ * 2. Do-while loops: Condition checked after execution
  *
  * A `WhileStatement` consists of:
  * - A **condition**: A boolean expression that determines if the loop should execute.
  * - A **body**: The block of code or a single statement to execute while the condition is `true`.
+ * - A **flag** indicating whether it's a do-while loop.
  *
  * Similar to an `IfStatement`, the body may be:
  * - A single statement (if no braces `{}` are used in the source code).
  * - A `CodeBlock` if braces `{...}` exist.
  *
  * Example Mini-Java Code:
- * - Simple while loop:
- *   ```java
- *   while (x > 0) {
- *       x--;
- *   }
- *   ```
- * - While loop without braces:
- *   ```java
- *   while (x > 0)
- *       x--; // Single statement body
- *   ```
+ * 1. While Loop:
+ *    ```java
+ *    while (x > 0) {
+ *        x--;
+ *    }
+ *    ```
+ * 2. While Loop without braces:
+ *    ```java
+ *    while (x > 0)
+ *        x--; // Single statement body
+ *    ```
+ * 3. Do-While Loop:
+ *    ```java
+ *    do {
+ *        x--;
+ *    } while (x > 0);
+ *    ```
+ * 4. Do-While without braces:
+ *    ```java
+ *    do x--; while (x > 0);
+ *    ```
  */
 struct WhileStatement : public ASTNode {
     /// The condition controlling the loop, which must evaluate to a boolean type.
@@ -792,8 +804,12 @@ struct WhileStatement : public ASTNode {
     /// The loop body, either a `CodeBlock` or a single statement.
     std::unique_ptr<CodeBlock> body;
 
+    /// Flag indicating whether this is a do-while loop (true) or while loop (false).
+    bool isDoWhile = false;
+
     WhileStatement(std::unique_ptr<ASTNode> condition_,
-                   std::unique_ptr<CodeBlock> body_);
+                   std::unique_ptr<CodeBlock> body_,
+                   bool do_);
 
     void print(std::ostream &strm, int depth = 0) const override;
 
@@ -801,14 +817,16 @@ struct WhileStatement : public ASTNode {
      * @brief Resolves the types and validates the `WhileStatement` during semantic analysis.
      * @param symbolTable The symbol table used for resolving variable declarations and types.
      *
-     * During resolution:
-     * - Ensures the condition is of type `boolean`.
+     * Validates:
+     * - Condition must be boolean type
+     * - Body contains valid statements
+     * - Variables used are in scope
      *
-     * Example Validations:
-     * - The condition must evaluate to a `boolean`. For example:
-     *   ```java
-     *   while (42) { } // Error: Condition must be boolean.
-     *   ```
+     * Example Errors:
+     * ```java
+     * while (42) { }        // Error: Condition must be boolean
+     * do { } while (1 + 2); // Error: Condition must be boolean
+     * ```
      */
     void analyseSemantics(SymbolTable &symbolTable) override;
 

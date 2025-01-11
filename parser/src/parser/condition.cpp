@@ -46,13 +46,7 @@ std::unique_ptr<ASTNode> parseIfStatement(
     if (token == nullptr) {
         error("Failed to parse if-statement, expected '{'", token);
     }
-    CodeBlock cb = {};
-    if (token->lexeme == "{") {
-        parseCodeBlock(&cb, project, streamer);
-    } else {
-        parseStatement(&cb, token, project, streamer);
-    }
-    std::unique_ptr<CodeBlock> codeBlockNode = std::make_unique<CodeBlock>(std::move(cb));
+    auto codeBlockNode = parseCodeBlockOrStatement(token, project, streamer);
 
     std::unique_ptr<ASTNode> elseBody = nullptr;
     token = streamer.read();
@@ -65,13 +59,7 @@ std::unique_ptr<ASTNode> parseIfStatement(
         if (token->lexeme == "if") {
             elseBody = parseIfStatement(project, streamer);
         } else {
-            CodeBlock elseCodeBody = {};
-            if (token->lexeme == "{") {
-                parseCodeBlock(&elseCodeBody, project, streamer);
-            } else {
-                parseStatement(&elseCodeBody, token, project, streamer);
-            }
-            elseBody = std::make_unique<CodeBlock>(std::move(elseCodeBody));
+            elseBody = parseCodeBlockOrStatement(token, project, streamer);
         }
     } else {
         streamer.unread();
@@ -113,30 +101,88 @@ std::unique_ptr<ASTNode> parseWhileStatement(
 ) {
     Token *token = streamer.read();
     if (token == nullptr || token->lexeme != "(") {
-        error("Failed to parse if-statement, expected '('", token);
+        error("Failed to parse while-statement, expected '('", token);
     }
     auto condition = parseExpression(project, streamer);
     token = streamer.read();
     if (token == nullptr || token->lexeme != ")") {
-        error("Failed to parse if-statement, expected ')'", token);
+        error("Failed to parse while-statement, expected ')'", token);
     }
 
     token = streamer.read();
     if (token == nullptr) {
-        error("Failed to parse if-statement, expected '{'", token);
+        error("Failed to parse while-statement, expected '{'", token);
     }
-
-    CodeBlock cb = {};
-    if (token->lexeme == "{") {
-        parseCodeBlock(&cb, project, streamer);
-    } else if (token->lexeme != ";") {
-        parseStatement(&cb, token, project, streamer);
-    }
-    std::unique_ptr<CodeBlock> codeBlockNode = std::make_unique<CodeBlock>(std::move(cb));
 
     std::unique_ptr<ASTNode> node = std::make_unique<WhileStatement>(
             std::move(condition),
-            std::move(codeBlockNode)
+            parseCodeBlockOrStatement(token, project, streamer),
+            false
+    );
+    return node;
+}
+
+/**
+ * @brief Parses a `do-while` loop statement in Mini-Java.
+ *
+ * The `do-while` loop consists of:
+ * 1. A 'do' keyword
+ * 2. A body (executed at least once)
+ * 3. A 'while' keyword
+ * 4. A condition in parentheses
+ * 5. A semicolon
+ *
+ * This function constructs a `WhileStatement` AST node with the parsed condition
+ * and body. It ensures the syntax of the `do-while` loop is correct, including the
+ * presence of the condition and body structure.
+ *
+ * Example Mini-Java Code:
+ * ```java
+ * // With braces
+ * do {
+ *     x--;
+ * } while (x > 0);
+ *
+ * // Without braces (single statement)
+ * do x--; while (x > 0);
+ * ```
+ *
+ * @param project The Project context for parsing.
+ * @param streamer The TokenStreamer for reading tokens.
+ * @return std::unique_ptr<ASTNode> A WhileStatement node with isDoWhile=true.
+ */
+std::unique_ptr<ASTNode> parseDoWhileStatement(
+        Project &project,
+        TokenStreamer &streamer
+) {
+    Token *token = streamer.read();
+    if (token == nullptr) {
+        error("Failed to parse do-while-statement, expected '{'", token);
+    }
+    auto body = parseCodeBlockOrStatement(token, project, streamer);
+
+    token = streamer.read();
+    if (token == nullptr || token->lexeme != "while") {
+        error("Failed to parse do-while-statement, expected 'while'", token);
+    }
+    token = streamer.read();
+    if (token == nullptr || token->lexeme != "(") {
+        error("Failed to parse do-while-statement, expected '('", token);
+    }
+    auto condition = parseExpression(project, streamer);
+    token = streamer.read();
+    if (token == nullptr || token->lexeme != ")") {
+        error("Failed to parse do-while-statement, expected ')'", token);
+    }
+    token = streamer.read();
+    if (token == nullptr || token->lexeme != ";") {
+        error("Failed to parse do-while-statement, expected ';'", token);
+    }
+
+    std::unique_ptr<ASTNode> node = std::make_unique<WhileStatement>(
+            std::move(condition),
+            std::move(body),
+            true
     );
     return node;
 }
@@ -229,13 +275,7 @@ std::unique_ptr<ASTNode> parseForStatement(
     if (token == nullptr) {
         error("Failed to parse for-statement, expected '{'", token);
     } else if (token->lexeme != ";") {
-        CodeBlock cb = {};
-        if (token->lexeme == "{") {
-            parseCodeBlock(&cb, project, streamer);
-        } else {
-            parseStatement(&cb, token, project, streamer);
-        }
-        body = std::make_unique<CodeBlock>(std::move(cb));
+        body = parseCodeBlockOrStatement(token, project, streamer);
     }
 
     std::unique_ptr<ASTNode> node = std::make_unique<ForStatement>(

@@ -1,13 +1,17 @@
 #include "../../include/ast.h"
 
 WhileStatement::WhileStatement(
-        std::unique_ptr<ASTNode> condition_,
-        std::unique_ptr<CodeBlock> body_
+        std::unique_ptr <ASTNode> condition_,
+        std::unique_ptr <CodeBlock> body_,
+        bool do_
 ) : condition(std::move(condition_)),
-    body(std::move(body_)) {}
+    body(std::move(body_)),
+    isDoWhile(do_) {}
 
 void WhileStatement::print(std::ostream &strm, int depth) const {
-    strm << std::string(depth, '\t') << "WhileStatement" << " (Type:" << type << ")" << std::endl;
+    strm << std::string(depth, '\t')
+         << (isDoWhile ? "DoWhileStatement" : "WhileStatement")
+         << " (Type:" << type << ")" << std::endl;
     strm << std::string(depth + 1, '\t') << "Condition:" << std::endl;
     condition->print(strm, depth + 2);
     strm << std::string(depth + 1, '\t') << "Body:" << std::endl;

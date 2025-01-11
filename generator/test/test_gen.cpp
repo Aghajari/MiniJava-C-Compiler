@@ -8,6 +8,9 @@ int main() {
 class MergeSortExample {
 
     public void test(){
+        int x = 10;
+        do x--; while(x > 0);
+
         for(int i = 0; i < 10; i++) System.out.println(i);
     }
 

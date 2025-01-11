@@ -388,10 +388,10 @@ std::string generate(ThreeAddressCodeGenerator &gen, IfStatement *node) {
 }
 
 /**
- * @brief Generates TAC for a `while` loop.
+ * @brief Generates TAC for a `while` or 'do-while' loop.
  *
  * Creates labels for the loop:
- * - `start`: For evaluating the condition.
+ * - `start`: For evaluating the condition or start of 'do-while' body.
  * - `end`: For breaking out of the loop.
  * The condition is negated, and execution jumps to `end` if it is false.
  *
@@ -403,7 +403,7 @@ std::string generate(ThreeAddressCodeGenerator &gen, IfStatement *node) {
  * ```c
  * while_start:
  * if (!condition) goto while_end;
- *     ... // Loop body
+ *     {...} // Loop body
  * goto while_start;
  * while_end:
  * ```
@@ -417,10 +417,15 @@ std::string generate(ThreeAddressCodeGenerator &gen, WhileStatement *node) {
     std::string endLabel = gen.labelGen.newLabel("while_end");
     gen.pushLabel(startLabel, endLabel);
     gen.emitLabel(startLabel);
-    std::string conditionTemp = generate(gen, &node->condition);
-
-    gen.emit("if (" + not_condition(conditionTemp) + ") goto " + endLabel);
-    generate(gen, node->body.get());
+    if (node->isDoWhile) {
+        generate(gen, node->body.get());
+        std::string conditionTemp = generate(gen, &node->condition);
+        gen.emit("if (" + not_condition(conditionTemp) + ") goto " + endLabel);
+    } else {
+        std::string conditionTemp = generate(gen, &node->condition);
+        gen.emit("if (" + not_condition(conditionTemp) + ") goto " + endLabel);
+        generate(gen, node->body.get());
+    }
     gen.emit("goto " + startLabel);
     gen.emitLabel(endLabel);
     gen.popLabel();

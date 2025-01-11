@@ -95,6 +95,11 @@ std::unique_ptr<ASTNode> parseWhileStatement(
         TokenStreamer &streamer
 );
 
+std::unique_ptr<ASTNode> parseDoWhileStatement(
+        Project &project,
+        TokenStreamer &streamer
+);
+
 std::unique_ptr<ASTNode> parseForStatement(
         Project &project,
         TokenStreamer &streamer
@@ -114,6 +119,12 @@ void parseSimpleStatement(
 
 void parseStatement(
         CodeBlock *codeBlock,
+        Token *token,
+        Project &project,
+        TokenStreamer &streamer
+);
+
+std::unique_ptr<CodeBlock> parseCodeBlockOrStatement(
         Token *token,
         Project &project,
         TokenStreamer &streamer

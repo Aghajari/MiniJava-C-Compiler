@@ -260,6 +260,9 @@ void parseStatement(
     } else if (token->lexeme == "while") {
         auto node = parseWhileStatement(project, streamer);
         codeBlock->addCode(node);
+    } else if (token->lexeme == "do") {
+        auto node = parseDoWhileStatement(project, streamer);
+        codeBlock->addCode(node);
     } else if (token->lexeme == "for") {
         auto node = parseForStatement(project, streamer);
         codeBlock->addCode(node);
@@ -327,4 +330,50 @@ void parseCodeBlock(
 
         parseStatement(codeBlock, token, project, streamer);
     }
+}
+
+/**
+ * @brief Parses either a code block (enclosed in braces) or a single statement.
+ *
+ * This function handles two cases:
+ * 1. A block of code enclosed in curly braces `{ ... }`
+ * 2. A single statement without braces
+ *
+ * This is commonly used in control structures where braces are optional for single statements:
+ * ```java
+ * // With braces (code block):
+ * if (condition) {
+ *     statement1;
+ *     statement2;
+ * }
+ *
+ * // Without braces (single statement):
+ * if (condition)
+ *     statement;
+ * ```
+ *
+ * Note: Even single statements are wrapped in a CodeBlock for uniform handling
+ * in the AST.
+ *
+ * @param token The current token being processed
+ * @param project The project context
+ * @param streamer The token streamer for reading input
+ * @return A unique_ptr to a CodeBlock containing either:
+ *         - Multiple statements if parsing a braced block
+ *         - A single statement if parsing an unbraced statement
+ */
+std::unique_ptr<CodeBlock> parseCodeBlockOrStatement(
+        Token *token,
+        Project &project,
+        TokenStreamer &streamer
+) {
+    CodeBlock cb = {};
+    if (token->lexeme != ";") {
+        if (token->lexeme == "{") {
+            parseCodeBlock(&cb, project, streamer);
+        } else {
+            parseStatement(&cb, token, project, streamer);
+        }
+    }
+    return std::make_unique<CodeBlock>(std::move(cb));
 }
