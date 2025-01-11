@@ -1,17 +1,31 @@
 #include "../../internal/parser_internal.h"
 
 std::vector<std::vector<std::string>> operatorPrecedence = {
-        {"||"},                   // Logical OR (Lowest precedence)
-        {"&&"},                   // Logical AND
-        {"|"},                    // Bitwise OR
-        {"^"},                    // Bitwise XOR
-        {"&"},                    // Bitwise AND
-        {"==", "!="},             // Equality Operators
-        {"<",  "<=", ">", ">="},   // Relational Operators
-        {"+",  "-"},               // Addition, Subtraction
-        {"*",  "/",  "%"},          // Multiplication, Division, Modulus
-        {"!",  "~"}                // Logical NOT, Bitwise NOT (Highest precedence)
+        {"||"},                   /// Logical OR (Lowest precedence)
+        {"&&"},                   /// Logical AND
+        {"|"},                    /// Bitwise OR
+        {"^"},                    /// Bitwise XOR
+        {"&"},                    /// Bitwise AND
+        {"==", "!="},             /// Equality Operators
+        {"<",  "<=", ">", ">="},  /// Relational Operators
+        {"<<", ">>", ">>>"},      /// Shift
+        {"+",  "-"},              /// Addition, Subtraction
+        {"*",  "/",  "%"},        /// Multiplication, Division, Modulus
+        {"!",  "~"}               /// Logical NOT, Bitwise NOT (Highest precedence)
 };
+
+bool isAssignment(Token *token) {
+    return token->lexeme == "=" ||
+           token->lexeme == "+=" ||
+           token->lexeme == "-=" ||
+           token->lexeme == "*=" ||
+           token->lexeme == "/=" ||
+           token->lexeme == "&=" ||
+           token->lexeme == "|=" ||
+           token->lexeme == "^=" ||
+           token->lexeme == ">>=" ||
+           token->lexeme == "<<=";
+}
 
 /**
  * @brief Parses a **reference chain** consisting of fields, method calls, array accesses, and object creation.
@@ -191,6 +205,86 @@ std::unique_ptr<ASTNode> parsePrimary(
 }
 
 /**
+ * @brief Parses type cast expressions in Mini-Java.
+ *
+ * This function attempts to parse cast expressions of the form:
+ * ```java
+ * (Type) expression
+ * ```
+ * where Type is a valid type identifier and expression is any valid expression.
+ *
+ * The function uses lookahead and backtracking to distinguish between:
+ * - Cast expressions: (Type)expr
+ * - Parenthesized expressions: (expr)
+ *
+ * Examples of valid casts:
+ * ```java
+ * (Parent)child            // Cast child to Parent type
+ * (int)booleanValue       // Cast boolean to int
+ * (MyClass)someObject     // Cast to custom class type
+ * ```
+ *
+ * Parse Rules:
+ * 1. Must start with opening parenthesis '('
+ * 2. Followed by a type identifier
+ * 3. Followed by closing parenthesis ')'
+ * 4. Followed by an expression to cast
+ * 5. Next token cannot be an operator or semicolon (to distinguish from parenthesized expressions)
+ *
+ * Example Parse Tree:
+ * ```
+ * CastExpression
+ * ├── Type: "Parent"
+ * └── Expression: childVariable
+ * ```
+ *
+ * @param project The current Project context.
+ * @param streamer TokenStreamer for reading input tokens.
+ * @return unique_ptr to CastExpression if a valid cast is found, nullptr otherwise.
+ *
+ * Implementation Details:
+ * - Uses save/restore points for backtracking if cast pattern isn't matched
+ * - Distinguishes between casts and parenthesized expressions
+ * - Creates CastExpression node for valid casts
+ *
+ * Example Usage:
+ * ```java
+ * // Valid cast expressions:
+ * (Parent)child.method()   // Cast result of method call
+ * (int)(x + y)             // Cast arithmetic result
+ *
+ * // Not cast expressions (will return nullptr):
+ * (x + y) * z              // Parenthesized expression
+ * (x);                     // Simple parenthesized variable
+ * ```
+ */
+std::unique_ptr<ASTNode> parseCast(
+        Project &project,
+        TokenStreamer &streamer
+) {
+    if (streamer.peek()->lexeme == "(") {
+        streamer.save();
+        streamer.read();
+        Token *castTo = streamer.peek();
+        if (castTo != nullptr &&
+            (castTo->type == TokenType::IDENTIFIER ||
+             castTo->lexeme == "int" ||
+             castTo->lexeme == "boolean")) {
+            streamer.read();
+            if (streamer.peek() != nullptr && streamer.peek()->lexeme == ")") {
+                streamer.read();
+                if (streamer.peek() != nullptr && streamer.peek()->type != TokenType::OPERATOR &&
+                    streamer.peek()->lexeme != ";") {
+                    return std::make_unique<CastExpression>(std::move(*castTo), parseExpression(project, streamer));
+                }
+            }
+        }
+        streamer.restore();
+    }
+    return nullptr;
+}
+
+/**
  * @brief Parses an expression while respecting operator precedence.
  *
  * This function parses complex expressions with mixed operators by recursively parsing
@@ -219,10 +313,13 @@ std::unique_ptr<ASTNode> parseExpressionWithPrecedence(
         if (streamer.peek() != nullptr &&
             (streamer.peek()->lexeme == "!" || streamer.peek()->lexeme == "~")) {
             Token *op = streamer.read();
-            return std::make_unique<NotExpression>(*op,
-                                                   parseExpressionWithPrecedence(project, streamer, precedenceLevel));
+            return std::make_unique<NotExpression>(*op, parseExpression(project, streamer));
         }
 
+        auto cast = parseCast(project, streamer);
+        if (cast) {
+            return cast;
+        }
         return parsePrimary(project, streamer);
     }
 
@@ -271,20 +368,9 @@ std::unique_ptr<ASTNode> parseExpression(
         return std::make_unique<NotExpression>(*op, parseExpression(project, streamer));
     }
 
-    if (streamer.peek()->lexeme == "(") {
-        streamer.save();
-        streamer.read();
-        if (streamer.peek() != nullptr && streamer.peek()->type == TokenType::IDENTIFIER) {
-            Token *castTo = streamer.read();
-            if (streamer.peek() != nullptr && streamer.peek()->lexeme == ")") {
-                streamer.read();
-                if (streamer.peek() != nullptr && streamer.peek()->type != TokenType::OPERATOR &&
-                    streamer.peek()->lexeme != ";") {
-                    return std::make_unique<CastExpression>(std::move(*castTo), parseExpression(project, streamer));
-                }
-            }
-        }
-        streamer.restore();
+    auto cast = parseCast(project, streamer);
+    if (cast) {
+        return cast;
     }
 
     return parseExpressionWithPrecedence(project, streamer);
@@ -369,14 +455,7 @@ void parseAssignment(
         error("Failed to parse assignment code, Expected assignment or method call but got null");
     }
 
-    if (next->lexeme == "=" ||
-        next->lexeme == "+=" ||
-        next->lexeme == "-=" ||
-        next->lexeme == "*=" ||
-        next->lexeme == "&=" ||
-        next->lexeme == "|=" ||
-        next->lexeme == "^=" ||
-        next->lexeme == "/=") {
+    if (isAssignment(next)) {
 
         auto expression = parseExpression(project, streamer);
         std::unique_ptr<ASTNode> node = std::make_unique<Assignment>(

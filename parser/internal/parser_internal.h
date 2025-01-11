@@ -13,6 +13,9 @@ struct ParamSignature {
     Identifier name;
 };
 
+
+bool isAssignment(Token *token);
+
 bool isValidType(
         Token *token,
         bool canBeVoid

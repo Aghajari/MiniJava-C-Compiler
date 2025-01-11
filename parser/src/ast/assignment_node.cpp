@@ -33,9 +33,8 @@ void Assignment::analyseSemantics(SymbolTable &symbolTable) {
         assignmentToken.lexeme == "-=" ||
         assignmentToken.lexeme == "*=" ||
         assignmentToken.lexeme == "/=" ||
-        assignmentToken.lexeme == "&=" ||
-        assignmentToken.lexeme == "|=" ||
-        assignmentToken.lexeme == "^=") {
+        assignmentToken.lexeme == "<<=" ||
+        assignmentToken.lexeme == ">>=") {
         if (lhsType != "int") {
             error("Invalid compound assignment: '" + assignmentToken.lexeme +
                   "' requires 'int', but found '" + lhsType + "'");
@@ -44,25 +43,32 @@ void Assignment::analyseSemantics(SymbolTable &symbolTable) {
             error("Invalid compound assignment: Cannot apply '" + assignmentToken.lexeme +
                   "' with incompatible right-hand side type '" + rhsType + "'");
         }
-        type = "void";
+    } else if (assignmentToken.lexeme == "&=" ||
+               assignmentToken.lexeme == "|=" ||
+               assignmentToken.lexeme == "^=") {
+        if (lhsType != "int" && lhsType != "boolean") {
+            error("Invalid compound assignment: '" + assignmentToken.lexeme +
+                  "' requires 'int' or 'boolean', but found '" + lhsType + "'");
+        } else if (lhsType != rhsType) {
+            error("Type mismatch in assignment: Cannot assign value of type '" + rhsType +
+                  "' to variable/field of type '" + lhsType + "'");
+        }
     } else if (assignmentToken.lexeme == "=") {
         if (lhsType == "void" || rhsType == "void") {
             error("Type mismatch in assignment: Cannot assign value of type void");
         }
 
+        bool rhsPrimitive = rhsType == "int" || rhsType == "int[]" || rhsType == "boolean";
+        bool lhsPrimitive = lhsType == "int" || lhsType == "int[]" || lhsType == "boolean";
+
         if (lhsType != rhsType) {
-            if (lhsType == "int" ||
-                lhsType == "int[]" ||
-                lhsType == "boolean" ||
-                !SymbolTable::canCast(rhsType, lhsType)) {
-                if (expression->getType() != ASTType::AST_CastExpression) {
-                    error("Type mismatch in assignment: Cannot assign value of type '" + rhsType +
-                          "' to variable/field of type '" + lhsType + "'");
-                }
+            if (lhsPrimitive || rhsPrimitive || !SymbolTable::canCast(rhsType, lhsType)) {
+                error("Type mismatch in assignment: Cannot assign value of type '" + rhsType +
+                      "' to variable/field of type '" + lhsType + "'");
             }
         }
-        type = "void";
     } else {
         error("Unsupported assignment operator: " + assignmentToken.lexeme);
     }
+    type = "void";
 }

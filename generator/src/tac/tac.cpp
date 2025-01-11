@@ -31,14 +31,31 @@ std::string not_condition(const std::string &condition) {
 /**
  * @brief Generates TAC for a binary expression (e.g., `x + y`).
  *
- * Handles binary operators such as `+`, `-`, `*`, `/`, `<`, and `>`. The function:
+ * Handles binary operators including:
+ * - Arithmetic: `+`, `-`, `*`, `/`, '%'
+ * - Equality: '==', '!='
+ * - Comparison: `<`, `>`, `<=`, `>=`
+ * - Bitwise: `&`, `|`, `^`
+ * - Shifts: `<<`, `>>`, `>>>`
+ *
+ * Special handling is provided for the unsigned right shift operator (`>>>`),
+ * which is translated to C using explicit casting to achieve unsigned behavior.
+ *
+ * The function:
  * - Recursively generates TAC for the left and right operands.
  * - Allocates a new temporary variable to store the result.
  * - Emits a TAC instruction like `temp1 = left + right`.
  *
- * Example:
+ * Examples:
+ * ```java
+ * x + y
+ * a >>> b
+ * ```
+ *
+ * Generated TAC:
  * ```c
  * int temp1 = x + y;
+ * int temp2 = (int)((unsigned int)(a) >> b);
  * ```
  *
  * @param gen The TAC generator context.
@@ -49,7 +66,11 @@ std::string generate(ThreeAddressCodeGenerator &gen, BinaryExpression *node) {
     std::string leftTemp = generate(gen, &node->left);
     std::string rightTemp = generate(gen, &node->right);
     std::string result = gen.tempGen.newTemp();
-    gen.emit(get_type(node->type) + result + " = " + leftTemp + " " + node->op.lexeme + " " + rightTemp);
+    if (node->op.lexeme == ">>>") {
+        gen.emit(get_type(node->type) + result + " = (int) ((unsigned int) (" + leftTemp + ") >> " + rightTemp + ")");
+    } else {
+        gen.emit(get_type(node->type) + result + " = " + leftTemp + " " + node->op.lexeme + " " + rightTemp);
+    }
     return result;
 }
 

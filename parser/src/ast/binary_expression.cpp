@@ -28,18 +28,26 @@ void BinaryExpression::analyseSemantics(SymbolTable &symbolTable) {
         op.lexeme == "*" ||
         op.lexeme == "/" ||
         op.lexeme == "%" ||
-        op.lexeme == "&" ||
-        op.lexeme == "^" ||
-        op.lexeme == "|") {
+        op.lexeme == ">>" ||
+        op.lexeme == ">>>" ||
+        op.lexeme == "<<") {
         if (left->type != "int") {
             error("Arithmetic operators require 'int', found '" + left->type + "'");
         }
         type = "int";
-    } else if (op.lexeme == "&&" || op.lexeme == "||") {
+    } else if (op.lexeme == "&&" ||
+               op.lexeme == "||") {
         if (left->type != "boolean") {
             error("Logical operators require 'boolean', found '" + left->type + "'");
         }
         type = "boolean";
+    } else if (op.lexeme == "&" ||
+               op.lexeme == "^" ||
+               op.lexeme == "|") {
+        if (left->type != "int" && left->type != "boolean") {
+            error("Bitwise operators require 'int' or 'boolean', found '" + left->type + "'");
+        }
+        type = left->type;
     } else {
         if (op.lexeme == "<" || op.lexeme == ">" || op.lexeme == "<=" || op.lexeme == ">=") {
             if (left->type != "int" || right->type != "int") {

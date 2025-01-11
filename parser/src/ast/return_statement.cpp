@@ -5,7 +5,7 @@ ReturnStatement::ReturnStatement(
 ) : expr(std::move(expr_)) {}
 
 void ReturnStatement::print(std::ostream &strm, int depth) const {
-    strm << std::string(depth, '\t') << "Return " << " (Type:" << type << "): " << std::endl;
+    strm << std::string(depth, '\t') << "Return" << std::endl;
     if (expr) {
         expr->print(strm, depth + 1);
     }

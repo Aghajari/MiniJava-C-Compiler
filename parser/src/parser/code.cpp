@@ -43,14 +43,7 @@ void parseLocalVariableCode(
         return;
     }
 
-    if (next->lexeme == "=" ||
-        next->lexeme == "+=" ||
-        next->lexeme == "-=" ||
-        next->lexeme == "*=" ||
-        next->lexeme == "/=" ||
-        next->lexeme == "|=" ||
-        next->lexeme == "&=" ||
-        next->lexeme == "^=") {
+    if (isAssignment(next)) {
         parseAssignmentForLocalVariable(codeBlock, nameToken, next, project, streamer);
     } else {
         error("Failed to parse local variable code, Expected ; or assignment", next);
