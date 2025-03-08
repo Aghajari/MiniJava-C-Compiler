@@ -56,6 +56,9 @@ Welcome to the Compiler Course Project! In this project, you will develop a comp
 - [Handling int[] Array](#handling-int-array)
   - [Suggestion: Predefined int_array Class](#suggestion-predefined-int_array-class)
   - [Translating Mini-Java Array Declarations](#translating-mini-java-array-declarations)
+- [TAC with Functions and Stack](#tac-with-functions-and-stack)
+  - [Concept](#concept)
+  - [Example Translation](#example-translation)
 - [Conclusion](#conclusion)
 
  
@@ -641,6 +644,86 @@ When translating array declarations from Mini-Java to C, it's crucial to accurat
   This accesses the 21st element in the array stored within the `data` pointer of the `int_array` structure.
 
   This accesses the `length` field directly within the `int_array` structure, allowing you to manage and use the size of arrays as you would within Java.
+
+## TAC with Functions and Stack
+
+***This part of the project is optional*** and delves into a more advanced aspect of compiler design. 
+
+As we know, Three Address Code (TAC) doesn't inherently support direct method calls typical of higher-level languages. In striving for a more detailed compilation process, one can bypass the automatic use of C's internal stack and instead implement a custom stack for handling function calls.
+
+### Concept
+
+In traditional TAC, there is no direct representation for function calls and stack management. For those interested in expanding their compiler's capabilities, implementing a custom stack helps simulate the process of managing function calls, arguments, and return values at a lower level.
+
+### Example Translation
+
+Consider the following C code snippet that defines and calls a simple function:
+
+```c
+int test(int arg) {
+    printf("Hello World: %d\n", arg);
+    return arg * 2;
+}
+
+int main() {
+    int result = test(24);
+    printf("Result: %d\n", result);
+    return 0;
+}
+```
+
+
+In converting this to a system that uses a custom stack for function calls, you might create a translation that looks something like this:
+
+- **Declare a Custom Stack**:
+  - Initialize a stack to handle the function frames manually.
+
+- **Push Arguments to Stack**:
+  - Push the argument `24` and LR (the label you want to backto after function call) onto the custom stack before invoking the function.
+
+- **Use Goto and Label for Function Invocation**:
+  - Label sections of the code dedicated to functions for direct jumping using `goto`.
+
+- **Use Goto to Return from Function**: 
+  - Manipulate the stack to simulate returning from a function, managing the function flow manually.
+
+Here's a conceptual view of the translated code:
+
+```c
+#define STACK_SIZE 1000
+void *stack[STACK_SIZE];
+int stack_top = -1;
+
+#define push_to_stack(value) stack[++stack_top] = (void *) (value)
+#define pop_from_stack() stack[stack_top--]
+
+int main() {
+    goto main;
+
+    main: {
+        push_to_stack(24);
+        void *lr = &&main_after_test; // Simulate Link Register
+        push_to_stack(lr);
+        goto test;
+    }
+
+    main_after_test: {
+        int result = (int) (intptr_t) pop_from_stack();
+        printf("Result: %d\n", result);
+        return 0;
+    }
+
+    test: {
+        void *lr = pop_from_stack();
+        int arg = (int) (intptr_t) pop_from_stack();
+        printf("Hello World: %d\n", arg);
+        push_to_stack(arg * 2);
+        goto *lr;
+    }
+}
+```
+
+- **Analysis**: In this setup, you manually manage the stack to handle function arguments and positions via explicit `push` and `pop` operations. Function entry and exit points are controlled using labeled sections and `goto` statements, providing a clear, albeit more complex, method of simulating function calls.
 
 
 ## Conclusion
