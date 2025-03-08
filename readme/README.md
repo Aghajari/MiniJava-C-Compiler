@@ -32,6 +32,8 @@ Welcome to the Compiler Course Project! In this project, you will develop a comp
   - [Method Call Verification](#method-call-verification)
     - [Example 4: Incorrect Argument Type in Method Call](#example-4-incorrect-argument-type-in-method-call)
     - [Example 5: Incorrect Number of Arguments in Method Call](#example-5-incorrect-number-of-arguments-in-method-call)
+  - [Resolving Instance Variables with `this`](#resolving-instance-variables-with-this)
+    - [Example 6: Using `this` for Accurate Scope Resolution](#example-6-using-this-for-accurate-scope-resolution)
   - [Ensuring Effective Semantic Analysis](#ensuring-effective-semantic-analysis)
 - [Generating TAC](#generating-tac)
   - [`if` Statement](#if-statement)
@@ -255,6 +257,26 @@ a.test(true); // Error: Expected int but got boolean
 a.test(100, 200); // Error: Expected 1 argument but got 2
 ```
 - **Analysis:** The semantic analyzer detects that the number of arguments provided to `test` does not match its signature, resulting in an error.
+
+### Resolving Instance Variables with `this`
+
+The `this` keyword in Java serves to reference the current instance of a class and is crucial for resolving conflicts between class fields and local variables with overlapping names. During semantic analysis, ensuring the correct usage of `this` is essential for maintaining the integrity of the object-oriented structure.
+
+#### Example 6: Using `this` for Accurate Scope Resolution
+
+```java
+public class A {
+    int i = 100;
+
+    public void test() {
+        int i = 200;
+        System.out.println(i); // Prints 200
+        System.out.println(this.i); // Prints 100
+    }
+}
+```
+
+- **Analysis:** In this example, the semantic analyzer must differentiate between the local variable `i` and the instance variable `i`. The use of `this.i` explicitly accesses the class field, while `i` refers to the local variable within the test method. The analyzer ensures accurate scope resolution, maintaining the proper distinctions and accesses.
 
 ### Ensuring Effective Semantic Analysis
 
