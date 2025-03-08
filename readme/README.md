@@ -266,9 +266,10 @@ The `this` keyword in Java serves to reference the current instance of a class a
 
 ```java
 public class A {
-    int i = 100;
+    int i;
 
     public void test() {
+        i = 100; // Sets the instance variable i declared in the class
         int i = 200;
         System.out.println(i); // Prints 200
         System.out.println(this.i); // Prints 100
