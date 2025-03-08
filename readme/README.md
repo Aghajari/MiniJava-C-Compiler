@@ -34,6 +34,8 @@ Welcome to the Compiler Course Project! In this project, you will develop a comp
     - [Example 5: Incorrect Number of Arguments in Method Call](#example-5-incorrect-number-of-arguments-in-method-call)
   - [Resolving Instance Variables with `this`](#resolving-instance-variables-with-this)
     - [Example 6: Using `this` for Accurate Scope Resolution](#example-6-using-this-for-accurate-scope-resolution)
+  - [Correct Usage of `break` and `continue`](#correct-usage-of-break-and-continue)
+    - [Example 7: Ensuring `break` and `continue` are Used Within Loop Scopes](#example-7-ensuring-break-and-continue-are-used-within-loop-scopes)
   - [Ensuring Effective Semantic Analysis](#ensuring-effective-semantic-analysis)
 - [Generating TAC](#generating-tac)
   - [`if` Statement](#if-statement)
@@ -281,6 +283,24 @@ public class A {
 ```
 
 - **Analysis:** In this example, the semantic analyzer must differentiate between the local variable `i` and the instance variable `i`. The use of `this.i` explicitly accesses the class field, while `i` refers to the local variable within the test method. The analyzer ensures accurate scope resolution, maintaining the proper distinctions and accesses.
+
+### Correct Usage of `break` and `continue`
+
+The `break` and `continue` statements are used exclusively within loop constructs to either exit a loop prematurely or skip to the next iteration of the loop, respectively. Using them outside of such contexts is semantically incorrect and should be flagged during the analysis phase.
+
+#### Example 7: Ensuring break and continue are Used Within Loop Scopes
+
+```java
+class A {
+    void test() {
+      continue; // Error: Expected a loop scope
+
+      while(true) break; // Ok: loop scope
+    }
+}
+```
+
+- **Analysis:** The semantic analyzer must ensure that both break and continue appear within loop constructs such as `for`, `while`, or `do-while` loops. An error should be flagged if they are used outside of these contexts.
 
 ### Ensuring Effective Semantic Analysis
 
