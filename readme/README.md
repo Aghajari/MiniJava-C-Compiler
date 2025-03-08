@@ -51,7 +51,12 @@ Welcome to the Compiler Course Project! In this project, you will develop a comp
     - [Implementing Functions](#implementing-functions)
     - [Initializing Structs and Setting Up Function Pointers](#initializing-structs-and-setting-up-function-pointers)
     - [Invoking Methods](#invoking-methods)
-   
+- [Handling int[] Array](#handling-int-array)
+  - [Suggestion: Predefined int_array Class](#suggestion-predefined-int_array-class)
+  - [Translating Mini-Java Array Declarations](#translating-mini-java-array-declarations)
+- [Conclusion](#conclusion)
+
+ 
 ## Overview of Compiler Components
 
 A compiler comprises four main parts:
@@ -523,3 +528,101 @@ Function pointers provide a mechanism to invoke the correct method implementatio
 int res = instanceB->function_test(instanceB, 100);
 ```
 In this example, `instanceB->function_test(instanceB, 100)` dynamically calls `B_function_test`, as expected in an overridden context. This call demonstrates method overriding, ensuring that specific behavior defined in `struct B` is executed, even when accessed via a reference with a broader class perspective.
+
+## Handling int[] Array
+
+In translating Mini-Java to C, handling arrays requires careful attention since Java provides built-in functionality such as accessing the length of an array with ease. Meanwhile, C uses basic static arrays without intrinsic length properties. To address this, we outline a method to simulate Java's array length feature using a predefined structure in C.
+
+### Suggestion: Predefined int_array Class
+
+To effectively handle `int[]` arrays from Mini-Java, you can define a custom structure in C that includes an explicit length field. This structure is crucial for being able to handle array length operations similarly to Java. Here's a simple example:
+
+```c
+typedef struct {
+    int length;
+    int *data;
+} int_array;
+
+int_array *new_int_array(int size) {
+    int_array *arr = (int_array *) malloc(sizeof(int_array));
+    arr->length = size;
+    arr->data = (int *) calloc(size, sizeof(int));
+    return arr;
+}
+```
+
+### Translating Mini-Java Array Declarations
+
+When translating array declarations from Mini-Java to C, it's crucial to accurately represent the Java features. Here's how you can handle this translation using a custom `int_array` structure:
+
+- **Declaration Example:**
+
+  In Mini-Java, declaring an integer array looks like this:
+
+  ```java
+  int[] a;
+  ```
+
+  When translated to C, it becomes:
+
+  ```c
+  int_array *a;
+  ```
+
+  Here, `a` is declared as a pointer to an `int_array` structure, which will handle the array data and its metadata, such as length.
+
+- **Array Initialization Example:**
+
+  An array initialization in Mini-Java, like:
+
+  ```java
+  int[] a = new int[100];
+  ```
+
+  Translates to:
+
+  ```c
+  int_array *a = new_int_array(100);
+  ```
+
+  This C code creates an `int_array` with a specified length of 100, allocating memory for storing 100 integers.
+
+- **Accessing Length Example:**
+
+  If you need to access the length of the array, Mini-Java syntax:
+
+  ```java
+  a.length
+  ```
+
+  Translates to C as:
+
+  ```c
+  a->length
+  ```
+
+- **Accessing Element at Index Example:**
+
+  Accessing an array element at a specific index in Mini-Java, such as:
+  
+  ```java
+  a[20]
+  ```
+
+  Translates to C as:
+  
+  ```c
+  a->data[20]
+  ```
+
+  This accesses the 21st element in the array stored within the `data` pointer of the `int_array` structure.
+
+  This accesses the `length` field directly within the `int_array` structure, allowing you to manage and use the size of arrays as you would within Java.
+
+
+## Conclusion
+
+Embarking on this compiler course project provides a compelling opportunity to delve into the intricacies of language processing and compiler design. By translating Mini-Java code into C, you will gain valuable insights into how high-level programming constructs are implemented at a lower level, offering both theoretical and practical understanding.
+
+Throughout this project, you are encouraged to explore and implement the core components of a compiler—lexical analysis, parsing, semantic analysis, and code generation. Additionally, leveraging tools such as ANTLR can simplify parts of the development process, allowing you to focus on other challenging aspects, like semantic analysis and code generation.
+
