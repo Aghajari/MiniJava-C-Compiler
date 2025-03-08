@@ -61,6 +61,13 @@ Welcome to the Compiler Course Project! In this project, you will develop a comp
 - [TAC with Functions and Stack](#tac-with-functions-and-stack)
   - [Concept](#concept)
   - [Example Translation](#example-translation)
+- [Obvious Constraints and Examples](#obvious-constraints-and-examples)
+  - [Constraint 1: Single Entry Point](#constraint-1-single-entry-point)
+  - [Constraint 2: Unique Class Names](#constraint-2-unique-class-names)
+  - [Constraint 3: Method and Class Definition Order](#constraint-3-method-and-class-definition-order)
+  - [Constraint 4: Translating System.out.println()](#constraint-4-translating-systemoutprintln)
+  - [Constraint 5: Ignoring Comments](#constraint-5-ignoring-comments)
+  - [Constraint 6: No Cyclic Dependencies](#constraint-6-no-cyclic-dependencies)
 - [Conclusion](#conclusion)
 
  
@@ -745,6 +752,95 @@ int main() {
 
 - **Analysis**: In this setup, you manually manage the stack to handle function arguments and positions via explicit `push` and `pop` operations. Function entry and exit points are controlled using labeled sections and `goto` statements, providing a clear, albeit more complex, method of simulating function calls.
 
+## Obvious Constraints and Examples
+
+When developing your Mini-Java compiler, it’s crucial to enforce certain constraints to ensure the program's correctness and reliability. Below are some key constraints that should be enforced during the compilation process, along with examples to illustrate each:
+
+### Constraint 1: Single Entry Point
+
+A valid Mini-Java program should have only one entry point, defined with the signature `public static void main(String[] args)`.
+
+**Example of Correct Usage**:  
+Ensure there is exactly one `main` method with the specified signature:
+```java
+public class Main {
+    public static void main(String[] args) { // Entry point
+        System.out.println(24);
+    }
+}
+```
+
+- **Analysis**: Ensure that your compiler checks for exactly one `main` method with the specified signature. Programs with zero or multiple `main` methods should be flagged with an error.
+
+### Constraint 2: Unique Class Names
+
+No two classes within the same program should have the same name to prevent ambiguity during type resolution and compilation.
+
+**Example of Incorrect Usage**:  
+Attempting to declare multiple classes with the same name should lead to an error:
+```java
+public class A {}
+public class A {} // Error: Class A is already defined
+```
+
+- **Analysis**: The semantic analyzer should flag an error whenever two classes with the same name are declared, enforcing unique identifiers for every class. (Also applies for methods and variables within a class)
+
+### Constraint 3: Method and Class Definition Order
+
+The order of method and class definitions should not affect the program’s semantics. Thus, you should allow references to classes and methods defined later in the program.
+
+**Example of Non-Sequential Definitions**:  
+It is valid to reference a class before its definition:
+```java
+public class B extends A {}
+public class A {}
+```
+
+- **Analysis**: The compiler should correctly handle references to `A` in class `B`, even though `A` is defined later in the file. Your compiler needs to manage these dependencies correctly through scope management and forward declarations.
+
+### Constraint 4: Translating System.out.println()
+
+In Mini-Java, any call to `System.out.println(arg)` should properly translate to C’s `printf` function for output.
+
+**Example Translation**:  
+```java
+System.out.println(arg);
+```
+Should be translated to 
+```c
+printf("%d\n", arg);
+```
+
+- **Analysis**: During translation to C, ensure that `System.out.println()` calls are converted to `printf` with appropriate format specifiers to match the argument type, allowing correct console output in the translated code.
+
+### Constraint 5: Ignoring Comments
+
+Your code should correctly ignore comments, both single-line comments (`//`) and multi-line comments (`/* ... */`), to focus only on the executable code.
+
+**Examples of Comments to Ignore**:
+
+```java
+// This is a single-line comment
+/* This is a 
+   multi-line comment */
+```
+
+- **Analysis**: During lexical analysis, the lexer should remove or skip over comments, ensuring that they do not interfere with the parsing and compilation process. This step helps maintain focus on the actual code logic without the distraction of non-executable comments.
+
+### Constraint 6: No Cyclic Dependencies
+
+Class hierarchies should not contain cycles, which can lead to infinite loops and logical errors during compilation.
+
+**Example of Cyclic Dependency (Incorrect)**:  
+```java
+public class A extends B {}
+public class B extends A {} // Error: Cyclic inheritance detected
+```
+
+- **Analysis**: The semantic analyzer should detect cyclic inheritance and flag an error. This constraint ensures that the class inheritance hierarchy forms a directed acyclic graph (DAG), maintaining logical soundness and preventing infinite loops in inheritance.
+
+
+By enforcing these constraints, you can ensure the correctness and robustness of Mini-Java programs compiled by your tool while also maintaining consistency with standard programming practices.
 
 ## Conclusion
 
