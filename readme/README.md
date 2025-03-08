@@ -6,10 +6,10 @@ Welcome to the Compiler Course Project! In this project, you will develop a comp
 
 - [Mini-Java to C](#mini-java-to-c)
 - [Overview of Compiler Components](#overview-of-compiler-components)
-  - [Lexer (Lexical Analysis)](#lexer-lexical-analysis)
-  - [Parser (Syntax Analysis)](#parser-syntax-analysis)
-  - [Semantic Analyzer](#semantic-analyzer)
-  - [Code Generator](#code-generator)
+  - Lexer (Lexical Analysis)
+  - Parser (Syntax Analysis)
+  - Semantic Analyzer
+  - Code Generator
 - [Using ANTLR](#using-antlr)
 - [Introduction to Mini-Java](#introduction-to-mini-java)
   - [Supported Features of Mini-Java](#supported-features-of-mini-java)
