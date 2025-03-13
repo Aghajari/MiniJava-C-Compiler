@@ -857,8 +857,8 @@ By enforcing these constraints, you can ensure the correctness and robustness of
 
 | Week | Task                                              |
 |------|---------------------------------------------------|
-| 1    | Define [MiniJava](#) language syntax and semantics |
-| 2    | Set up [ANTLR](#) and create grammar file        |
+| 1    | Define MiniJava language syntax and semantics |
+| 2    | Set up [ANTLR](https://www.antlr.org/) and create grammar file        |
 | 3    | Generate parser and lexer; construct parse tree  |
 | 4    | Implement semantic analysis                      |
 | 5    | Develop TAC generation module                    |
