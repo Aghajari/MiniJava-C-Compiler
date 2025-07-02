@@ -16,15 +16,22 @@ void CodeBlock::print(std::ostream &strm, int depth) const {
 void CodeBlock::analyseSemantics(SymbolTable &symbolTable) {
     auto scopeTable = SymbolTable(&symbolTable, symbolTable.getReturnType());
     type = "void";
-    bool hasReturn = false;
+    bool returns = false;
     for (auto &code: codes) {
+        if (returns) {
+            error("Unreachable statement");
+        }
         code->analyseSemantics(scopeTable);
-        if (!hasReturn) {
+        if (!returns) {
             if (code->getType() == AST_ReturnStatement) {
                 type = symbolTable.getReturnType();
-                hasReturn = true;
+                if (type == "void") {
+                    type = "return-void";
+                }
+                returns = true;
             } else if (code->getType() == AST_IfStatement && code->type != "void") {
                 type = code->type;
+                returns = true;
             }
         }
     }

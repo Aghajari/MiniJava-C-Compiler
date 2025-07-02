@@ -30,7 +30,13 @@ void IfStatement::analyseSemantics(SymbolTable &symbolTable) {
     if (elseBody) {
         elseBody->analyseSemantics(symbolTable);
     }
-    if (body->type == symbolTable.getReturnType() && elseBody && elseBody->type == body->type) {
+
+    std::string returnType = symbolTable.getReturnType();
+    if (returnType == "void") {
+        returnType = "return-void";
+    }
+
+    if (body->type == returnType && elseBody && elseBody->type == body->type) {
         type = body->type;
     } else {
         type = "void";
