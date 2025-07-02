@@ -30,5 +30,9 @@ void IfStatement::analyseSemantics(SymbolTable &symbolTable) {
     if (elseBody) {
         elseBody->analyseSemantics(symbolTable);
     }
-    type = "void";
+    if (body->type == symbolTable.getReturnType() && elseBody && elseBody->type == body->type) {
+        type = body->type;
+    } else {
+        type = "void";
+    }
 }

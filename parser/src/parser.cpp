@@ -92,6 +92,9 @@ void semanticAnalysis(Project &project) {
                 methodScope.addSymbol(param.getName(), Symbol(param.getName(), param.getTypeLexeme()));
             }
             method.getCodeBlock()->analyseSemantics(methodScope);
+            if (method.getCodeBlock()->type != method.getReturnTypeLexeme()) {
+                error("Missing return statement for " + method.getName() + " (" + method.getReturnTypeLexeme() + ")");
+            }
         }
     }
 }

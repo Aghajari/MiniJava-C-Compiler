@@ -7,7 +7,7 @@ void CodeBlock::addCode(std::unique_ptr<ASTNode> &node) {
 }
 
 void CodeBlock::print(std::ostream &strm, int depth) const {
-    strm << std::string(depth, '\t') << "CodeBlock" << std::endl;
+    strm << std::string(depth, '\t') << "CodeBlock (Type:" << type << ")" << std::endl;
     for (auto &c: codes) {
         c->print(strm, depth + 1);
     }
@@ -15,10 +15,19 @@ void CodeBlock::print(std::ostream &strm, int depth) const {
 
 void CodeBlock::analyseSemantics(SymbolTable &symbolTable) {
     auto scopeTable = SymbolTable(&symbolTable, symbolTable.getReturnType());
+    type = "void";
+    bool hasReturn = false;
     for (auto &code: codes) {
         code->analyseSemantics(scopeTable);
+        if (!hasReturn) {
+            if (code->getType() == AST_ReturnStatement) {
+                type = symbolTable.getReturnType();
+                hasReturn = true;
+            } else if (code->getType() == AST_IfStatement && code->type != "void") {
+                type = code->type;
+            }
+        }
     }
-    type = "void";
 }
 
 void CodeBlock::analyseSemanticsWithSameScope(SymbolTable &symbolTable) {
